@@ -172,8 +172,8 @@ class DCRNNSupervisor(object):
             })
 
         for i, (x, y) in enumerate(data_generator):
-            if i==10:
-                break
+            # if i==10:
+            #     break
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
