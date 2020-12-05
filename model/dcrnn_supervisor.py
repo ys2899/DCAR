@@ -172,12 +172,11 @@ class DCRNNSupervisor(object):
             })
 
         for i, (x, y) in enumerate(data_generator):
-            # if i==10:
-            #     break
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
-                model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]
+                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]
+                model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:]
             }
 
             vals = sess.run(fetches, feed_dict=feed_dict)
