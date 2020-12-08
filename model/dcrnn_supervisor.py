@@ -99,6 +99,7 @@ class DCRNNSupervisor(object):
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
 
+        import pdb
         pdb.set_trace()
 
         self._train_loss = self._loss_fn(preds=preds, labels=targets)
@@ -155,11 +156,13 @@ class DCRNNSupervisor(object):
         preds = model.outputs
         targets = model.targets
 
+        pdb.set_trace()
+
         if training:
             loss = self._loss_fn(preds=preds, labels=targets)
         else:
-            preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, -1])
-            targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, -1])
+            preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
+            targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
             loss = self._loss_fn(preds=preds, labels=targets)
 
         fetches = {
