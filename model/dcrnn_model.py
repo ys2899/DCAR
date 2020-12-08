@@ -66,7 +66,7 @@ class DCRNNARModel(object):
                 if is_training:
                     # Return either the model's prediction or the previous ground truth in training.
                     if use_curriculum_learning:
-                        c = tf.random_uniform((), minval=0, maxval=1.)
+                        c = tf.random_uniform((), minval=-1.0, maxval=1.0)
                         threshold = self._compute_sampling_threshold(global_step, cl_decay_steps)
                         result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i], lambda: prev)
                     else:
