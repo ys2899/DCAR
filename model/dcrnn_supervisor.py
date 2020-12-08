@@ -60,6 +60,7 @@ class DCRNNSupervisor(object):
                                                    batch_size=self._data_kwargs['batch_size'],
                                                    adj_mx=adj_mx, **self._model_kwargs)
 
+
         with tf.name_scope('Test'):
             with tf.variable_scope('DCRNN', reuse=True):
                 if model_type == "original":
@@ -97,8 +98,10 @@ class DCRNNSupervisor(object):
 
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
-        self._train_loss = self._loss_fn(preds=preds, labels=targets)
 
+        pdb.set_trace()
+
+        self._train_loss = self._loss_fn(preds=preds, labels=targets)
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
         max_grad_norm = kwargs['train'].get('max_grad_norm', 1.)
@@ -152,12 +155,19 @@ class DCRNNSupervisor(object):
         preds = model.outputs
         targets = model.targets
 
-        loss = self._loss_fn(preds=preds, labels=targets)
+        if training:
+            loss = self._loss_fn(preds=preds, labels=targets)
+        else:
+            preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, -1])
+            targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, -1])
+            loss = self._loss_fn(preds=preds, labels=targets)
+
         fetches = {
             'loss': loss,
             'mae': loss,
             'global_step': tf.train.get_or_create_global_step()
         }
+
         if training:
             fetches.update({
                 'train_op': self._train_op

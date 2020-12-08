@@ -1,0 +1,14 @@
+2020-12-05 10:23:08,060 - model.dcrnn_supervisor - INFO - Log directory: data/model/dcrnn_DR_2_h_12_64-64_lr_0.01_bs_64_1205102308/
+2020-12-05 10:23:08,061 - model.dcrnn_supervisor - INFO - {'base_dir': 'data/model', 'log_level': 'INFO', 'data': {'batch_size': 64, 'dataset_dir': 'data/METR-LA', 'test_batch_size': 64, 'val_batch_size': 64, 'graph_pkl_filename': 'data/sensor_graph/adj_mx.pkl'}, 'model': {'cl_decay_steps': 2000, 'filter_type': 'dual_random_walk', 'horizon': 12, 'input_dim': 2, 'l1_decay': 0, 'max_diffusion_step': 2, 'num_nodes': 207, 'num_rnn_layers': 2, 'output_dim': 1, 'rnn_units': 64, 'seq_len': 12, 'use_curriculum_learning': True}, 'train': {'base_lr': 0.01, 'dropout': 0, 'epoch': 0, 'epochs': 100, 'epsilon': 0.001, 'global_step': 0, 'lr_decay_ratio': 0.1, 'max_grad_norm': 5, 'max_to_keep': 100, 'min_learning_rate': 2e-06, 'optimizer': 'adam', 'patience': 50, 'steps': [20, 30, 40, 50], 'test_every_n_epochs': 10}}
+2020-12-05 10:23:23,372 - model.dcrnn_supervisor - INFO - ('x_train', (23974, 12, 207, 2))
+2020-12-05 10:23:23,373 - model.dcrnn_supervisor - INFO - ('y_train', (23974, 12, 207, 2))
+2020-12-05 10:23:23,373 - model.dcrnn_supervisor - INFO - ('x_val', (3425, 12, 207, 2))
+2020-12-05 10:23:23,373 - model.dcrnn_supervisor - INFO - ('y_val', (3425, 12, 207, 2))
+2020-12-05 10:23:23,373 - model.dcrnn_supervisor - INFO - ('x_test', (6850, 12, 207, 2))
+2020-12-05 10:23:23,373 - model.dcrnn_supervisor - INFO - ('y_test', (6850, 12, 207, 2))
+2020-12-05 10:23:35,248 - model.dcrnn_supervisor - INFO - Total number of trainable parameters: 186752
+2020-12-05 10:23:36,666 - model.dcrnn_supervisor - INFO - Start training ...
+2020-12-05 10:31:50,608 - model.dcrnn_supervisor - INFO - Epoch [0/100] (10) train_mae: 1.4901, val_mae: 1.6309 lr:0.010000 493.3s
+2020-12-05 10:31:51,384 - model.dcrnn_supervisor - INFO - Val loss decrease from inf to 1.6309, saving to data/model/dcrnn_DR_2_h_12_64-64_lr_0.01_bs_64_1205102308/models-1.6309-10
+2020-12-05 10:39:55,763 - model.dcrnn_supervisor - INFO - Epoch [1/100] (20) train_mae: 1.4901, val_mae: 1.6309 lr:0.010000 484.4s
+2020-12-05 10:39:55,802 - model.dcrnn_supervisor - INFO - Val loss decrease from 1.6309 to 1.6309, saving to data/model/dcrnn_DR_2_h_12_64-64_lr_0.01_bs_64_1205102308/models-1.6309-20
