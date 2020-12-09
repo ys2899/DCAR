@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+
 import pdb
 
 from tensorflow.contrib import legacy_seq2seq
@@ -56,8 +57,6 @@ class DCRNNARModel(object):
 
         with tf.variable_scope('DCRNN_SEQ'):
 
-            # inputs = tf.unstack(tf.reshape(self._inputs, (batch_size, seq_len, num_nodes * input_dim)), axis=1)
-            # labels = tf.unstack(tf.reshape(self._labels, (batch_size, horizon, num_nodes * input_dim)), axis=1)
             train_inputs = tf.unstack(self.train_inputs, axis=1)
 
             def _loop_function(prev, i):
@@ -66,7 +65,7 @@ class DCRNNARModel(object):
                 if is_training:
                     # Return either the model's prediction or the previous ground truth in training.
                     if use_curriculum_learning:
-                        c = tf.random_uniform((), minval=-1.0, maxval=1.0)
+                        c = tf.random_uniform((), minval=0.0, maxval=1.0)
                         threshold = self._compute_sampling_threshold(global_step, cl_decay_steps)
                         if i<seq_len:
                             result = train_inputs[i]

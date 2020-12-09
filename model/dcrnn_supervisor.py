@@ -98,10 +98,6 @@ class DCRNNSupervisor(object):
 
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
-
-        import pdb
-        pdb.set_trace()
-
         self._train_loss = self._loss_fn(preds=preds, labels=targets)
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
@@ -156,8 +152,6 @@ class DCRNNSupervisor(object):
         preds = model.outputs
         targets = model.targets
 
-        pdb.set_trace()
-
         if training:
             loss = self._loss_fn(preds=preds, labels=targets)
         else:
@@ -168,7 +162,8 @@ class DCRNNSupervisor(object):
         fetches = {
             'loss': loss,
             'mae': loss,
-            'global_step': tf.train.get_or_create_global_step()
+            'global_step': tf.train.get_or_create_global_step(),
+            'outputs': model.outputs
         }
 
         if training:
@@ -185,6 +180,7 @@ class DCRNNSupervisor(object):
             })
 
         for i, (x, y) in enumerate(data_generator):
+
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
@@ -223,6 +219,7 @@ class DCRNNSupervisor(object):
     def _train(self, sess, base_lr, epoch, steps, patience=50, epochs=100,
                min_learning_rate=2e-6, lr_decay_ratio=0.1, save_model=1,
                test_every_n_epochs=10, **train_kwargs):
+
         history = []
         min_val_loss = float('inf')
         wait = 0
@@ -247,7 +244,9 @@ class DCRNNSupervisor(object):
                                                      self._data['train_loader'].get_iterator(),
                                                      training=True,
                                                      writer=self._writer)
+
             train_loss, train_mae = train_results['loss'], train_results['mae']
+
             if train_loss > 1e5:
                 self._logger.warning('Gradient explosion detected. Ending...')
                 break
