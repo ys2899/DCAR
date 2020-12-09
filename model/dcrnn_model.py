@@ -68,7 +68,10 @@ class DCRNNARModel(object):
                     if use_curriculum_learning:
                         c = tf.random_uniform((), minval=-1.0, maxval=1.0)
                         threshold = self._compute_sampling_threshold(global_step, cl_decay_steps)
-                        result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i], lambda: prev)
+                        if i<seq_len:
+                            result = train_inputs[i]
+                        else:
+                            result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i], lambda: prev)
                     else:
                         result = train_inputs[i]
                 else:
