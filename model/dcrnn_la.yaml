@@ -23,7 +23,7 @@ model:
   use_curriculum_learning: true
 
 train:
-  base_lr: 0.01
+  base_lr: 0.025
   dropout: 0
   epoch: 0
   epochs: 100
