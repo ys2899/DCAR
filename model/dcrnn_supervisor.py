@@ -8,7 +8,6 @@ import sys
 import tensorflow as tf
 import time
 import yaml
-import pdb
 
 from lib import utils, metrics
 from lib.AMSGrad import AMSGrad
@@ -184,12 +183,14 @@ class DCRNNSupervisor(object):
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
-                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]
+                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]; I do not need this for computing the fetches.
                 model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:]
             }
 
             vals = sess.run(fetches, feed_dict=feed_dict)
+
             losses.append(vals['loss'])
+
             maes.append(vals['mae'])
             if writer is not None and 'merged' in vals:
                 writer.add_summary(vals['merged'], global_step=vals['global_step'])
@@ -293,6 +294,9 @@ class DCRNNSupervisor(object):
                                                 self._data['test_loader'].get_iterator(),
                                                 return_output=True,
                                                 training=False)
+
+        import pdb
+        pdb.set_trace()
 
         # y_preds:  a list of (batch_size, horizon, num_nodes, output_dim)
         test_loss, y_preds = test_results['loss'], test_results['outputs']
