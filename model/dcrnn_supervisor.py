@@ -93,8 +93,6 @@ class DCRNNSupervisor(object):
         preds = self._train_model.outputs
         targets = self._train_model.targets
 
-        # labels = self._train_model.labels[..., :output_dim]
-
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
         self._train_loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
