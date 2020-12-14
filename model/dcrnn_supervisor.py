@@ -93,11 +93,9 @@ class DCRNNSupervisor(object):
         preds = self._train_model.outputs
         targets = self._train_model.targets
 
-        # labels = self._train_model.labels[..., :output_dim]
-
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
-        self._train_loss = self._loss_fn(preds=preds, labels=targets)
+        # self._train_loss = self._loss_fn(preds=preds, labels=targets)
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
         max_grad_norm = kwargs['train'].get('max_grad_norm', 1.)
