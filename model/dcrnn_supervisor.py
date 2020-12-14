@@ -8,7 +8,6 @@ import sys
 import tensorflow as tf
 import time
 import yaml
-import pdb
 
 from lib import utils, metrics
 from lib.AMSGrad import AMSGrad
@@ -153,11 +152,11 @@ class DCRNNSupervisor(object):
         targets = model.targets
 
         if training:
-            loss = self._loss_fn(preds=preds, labels=targets)
+            loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
         else:
             preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
             targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
-            loss = self._loss_fn(preds=preds, labels=targets)
+            loss = self._loss_fn(preds=preds, labels=targets, alpha=1.0)
 
         fetches = {
             'loss': loss,
@@ -184,12 +183,13 @@ class DCRNNSupervisor(object):
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
-                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]
+                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]; I do not need this for computing the fetches.
                 model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:]
             }
 
             vals = sess.run(fetches, feed_dict=feed_dict)
             losses.append(vals['loss'])
+
             maes.append(vals['mae'])
             if writer is not None and 'merged' in vals:
                 writer.add_summary(vals['merged'], global_step=vals['global_step'])
@@ -294,10 +294,16 @@ class DCRNNSupervisor(object):
                                                 return_output=True,
                                                 training=False)
 
+        import pdb
+        pdb.set_trace()
+
+        # 我们很容易解释这个问题：：test_results['outputs']是一个108*64 的数组
+        # len(test_results['outputs'][0][0]) 是23长度的数组
         # y_preds:  a list of (batch_size, horizon, num_nodes, output_dim)
+
         test_loss, y_preds = test_results['loss'], test_results['outputs']
         utils.add_simple_summary(self._writer, ['loss/test_loss'], [test_loss], global_step=global_step)
-        y_preds = np.concatenate(y_preds, axis=0)
+        y_preds = np.concatenate(y_preds, axis=0)[-12:]
         scaler = self._data['scaler']
         predictions = []
         y_truths = []
