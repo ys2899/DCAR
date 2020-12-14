@@ -154,7 +154,7 @@ class DCRNNSupervisor(object):
         else:
             preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
             targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=1.0)
+            loss = self._loss_fn(preds=preds, labels=targets, alpha=None)
 
         fetches = {
             'loss': loss,
