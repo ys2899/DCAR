@@ -47,19 +47,20 @@ def masked_mae_tf(preds, labels, alpha, null_val=np.nan):
     # we might be able to associate different weights.
     loss = tf.abs(tf.subtract(preds, labels))
     loss = loss * mask
-    loss: object = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
+    loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
 
     # alpha could be any number greater than 0.5 but less than 1.
-    alpha_tensor = tf.expand_dims(
-        tf.expand_dims(
-            tf.expand_dims(tf.constant([
-                alpha, 1 - alpha]),
+    if alpha:
+        alpha_tensor = tf.expand_dims(
+            tf.expand_dims(
+                tf.expand_dims(tf.constant([
+                    alpha, 1 - alpha]),
+                    axis=0),
                 axis=0),
-            axis=0),
-        axis=0)
+            axis=0)
 
-    alpha_tensor = tf.tile(alpha_tensor, [loss.shape[0], loss.shape[1], loss.shape[2], 1])
-    loss = tf.math.multiply(alpha_tensor, loss, name=None)
+        alpha_tensor = tf.tile(alpha_tensor, [loss.shape[0], loss.shape[1], loss.shape[2], 1])
+        loss = tf.math.multiply(alpha_tensor, loss, name=None)
 
     return tf.reduce_mean(loss)
 
