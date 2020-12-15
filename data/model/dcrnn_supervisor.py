@@ -8,6 +8,7 @@ import sys
 import tensorflow as tf
 import time
 import yaml
+import pdb
 
 from lib import utils, metrics
 from lib.AMSGrad import AMSGrad
@@ -93,9 +94,11 @@ class DCRNNSupervisor(object):
         preds = self._train_model.outputs
         targets = self._train_model.targets
 
+        # labels = self._train_model.labels[..., :output_dim]
+
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
-        self._train_loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
+        self._train_loss = self._loss_fn(preds=preds, labels=targets)
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
         max_grad_norm = kwargs['train'].get('max_grad_norm', 1.)
@@ -150,11 +153,11 @@ class DCRNNSupervisor(object):
         targets = model.targets
 
         if training:
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
+            loss = self._loss_fn(preds=preds, labels=targets)
         else:
             preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
             targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=None)
+            loss = self._loss_fn(preds=preds, labels=targets)
 
         fetches = {
             'loss': loss,
@@ -181,18 +184,18 @@ class DCRNNSupervisor(object):
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
-                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]; I do not need this for computing the fetches.
+                # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]
                 model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:]
             }
 
             vals = sess.run(fetches, feed_dict=feed_dict)
             losses.append(vals['loss'])
-
             maes.append(vals['mae'])
             if writer is not None and 'merged' in vals:
                 writer.add_summary(vals['merged'], global_step=vals['global_step'])
             if return_output:
                 outputs.append(vals['outputs'])
+
 
         results = {
             'loss': np.mean(losses),
@@ -263,7 +266,7 @@ class DCRNNSupervisor(object):
             message = 'Epoch [{}/{}] ({}) train_mae: {:.4f}, val_mae: {:.4f} lr:{:.6f} {:.1f}s'.format(
                 self._epoch, epochs, global_step, train_mae, val_mae, new_lr, (end_time - start_time))
             self._logger.info(message)
-
+            test_every_n_epochs = 1
             if self._epoch % test_every_n_epochs == test_every_n_epochs - 1:
                 self.evaluate(sess)
             if val_loss <= min_val_loss:
@@ -287,33 +290,21 @@ class DCRNNSupervisor(object):
         return np.min(history)
 
     def evaluate(self, sess, **kwargs):
-
         global_step = sess.run(tf.train.get_or_create_global_step())
-
-
         test_results = self.run_epoch_generator(sess, self._test_model,
                                                 self._data['test_loader'].get_iterator(),
                                                 return_output=True,
                                                 training=False)
 
-
-        # 我们很容易解释这个问题：：test_results['outputs']是一个108*64 的数组
-        # len(test_results['outputs'][0][0]) 是23长度的数组
         # y_preds:  a list of (batch_size, horizon, num_nodes, output_dim)
-
         test_loss, y_preds = test_results['loss'], test_results['outputs']
-        
-
-
-
-
         utils.add_simple_summary(self._writer, ['loss/test_loss'], [test_loss], global_step=global_step)
         y_preds = np.concatenate(y_preds, axis=0)[:,-12:,:,:]
-
-
         scaler = self._data['scaler']
         predictions = []
         y_truths = []
+        import pdb
+        pdb.set_trace()
         for horizon_i in range(self._data['y_test'].shape[1]):
             y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 0])
             y_truths.append(y_truth)
