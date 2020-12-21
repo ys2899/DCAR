@@ -8,23 +8,20 @@ import tensorflow as tf
 from tensorflow.contrib.rnn import RNNCell
 from lib import utils
 
-import pdb
-
 
 class DCGRUCell(RNNCell):
     """Graph Convolution Gated Recurrent Unit cell.
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs, state, **kwargs):
         pass
 
     def compute_output_shape(self, input_shape):
         pass
 
-    def __init__(self, num_units, adj_mx, max_diffusion_step, num_nodes, num_proj=None,
+    def __init__(self, num_units, adj_mx, max_diffusion_step, num_nodes, first_layer=False, num_proj=None,
                  activation=tf.nn.tanh, reuse=None, filter_type="laplacian", use_gc_for_ru=True):
         """
-
         :param num_units:
         :param adj_mx:
         :param max_diffusion_step:
@@ -38,6 +35,7 @@ class DCGRUCell(RNNCell):
         """
         super(DCGRUCell, self).__init__(_reuse=reuse)
         self._activation = activation
+        self._first_layer = first_layer
         self._num_nodes = num_nodes
         self._num_proj = num_proj
         self._num_units = num_units
@@ -45,7 +43,6 @@ class DCGRUCell(RNNCell):
         self._supports = []
         self._use_gc_for_ru = use_gc_for_ru
         supports = []
-
 
         # This is the graph building
         if filter_type == "laplacian":
@@ -81,14 +78,21 @@ class DCGRUCell(RNNCell):
     def __call__(self, inputs, state, scope=None):
         """Gated recurrent unit (GRU) with Graph Convolution.
         :param inputs: (B, num_nodes * input_dim)
-
         :return
         - Output: A `2-D` tensor with shape `[batch_size x self.output_size]`.
         - New state: Either a single `2-D` tensor, or a tuple of tensors matching
             the arity and shapes of `state`
         """
+        if self._first_layer:
+            value_inputs = tf.slice(inputs, [0, 0, 0], [inputs.shape[0], inputs.shape[1], 1])
+            day_inputs = tf.slice(inputs, [0, 0, 1], [inputs.shape[0], inputs.shape[1], 1])
+            time_inputs = tf.slice(inputs, [0, 0, 2], [inputs.shape[0], inputs.shape[1], 1])
+        else:
+            value_inputs = inputs
+
         with tf.variable_scope(scope or "dcgru_cell"):
             with tf.variable_scope("gates"):  # Reset gate and update gate.
+
                 output_size = 2 * self._num_units
                 # We start with bias of 1.0 to not reset and not update.
                 if self._use_gc_for_ru:
@@ -97,14 +101,26 @@ class DCGRUCell(RNNCell):
                     fn = self._fc
 
                 # r, u means the r value and u value
-                value = tf.nn.sigmoid(fn(inputs, state, output_size, bias_start=1.0))
+                if self._first_layer:
+                    with tf.variable_scope('time_embedding'):
+                        day_embedding = tf.keras.layers.Embedding(input_dim=1, output_dim=2)(day_inputs)
+                        day_embedding = tf.reshape(day_embedding, [day_embedding.shape[0], day_embedding.shape[1],
+                                                                   day_embedding.shape[-1]])
+                        time_embedding = tf.concat((day_embedding, time_inputs), axis=-1)
+                else:
+                    time_embedding = None
+
+                value = tf.nn.sigmoid(fn(value_inputs, state, time_embedding, output_size, bias_start=1.0))
+
+
+
                 value = tf.reshape(value, (-1, self._num_nodes, output_size))
                 r, u = tf.split(value=value, num_or_size_splits=2, axis=-1)
                 r = tf.reshape(r, (-1, self._num_nodes * self._num_units))
                 u = tf.reshape(u, (-1, self._num_nodes * self._num_units))
 
             with tf.variable_scope("candidate"):
-                c = self._gconv(inputs, r * state, self._num_units)
+                c = self._gconv(value_inputs, r * state, time_embedding, self._num_units)
                 if self._activation is not None:
                     c = self._activation(c)
 
@@ -138,7 +154,7 @@ class DCGRUCell(RNNCell):
         value = tf.nn.bias_add(value, biases)
         return value
 
-    def _gconv(self, inputs, state, output_size, bias_start=0.0):
+    def _gconv(self, inputs, state, time_embedding, output_size, bias_start=0.0):
         """Graph convolution between input and the graph matrix.
 
         :param args: a 2D Tensor or a list of 2D, batch x n, Tensors.
@@ -149,19 +165,25 @@ class DCGRUCell(RNNCell):
         :return:
         """
         # Reshape input and state to (batch_size, num_nodes, input_dim/state_dim)
-        batch_size = inputs.get_shape()[0].value
 
+        batch_size = inputs.get_shape()[0].value
         inputs = tf.reshape(inputs, (batch_size, self._num_nodes, -1))
         state = tf.reshape(state, (batch_size, self._num_nodes, -1))
-        inputs_and_state = tf.concat([inputs, state], axis=2)
+
+        if time_embedding is not None:
+            # time_embedding = tf.reshape(time_embedding, (batch_size, self._num_nodes, -1))
+            inputs_and_state = tf.concat([inputs, state, time_embedding], axis=2)
+        else:
+            inputs_and_state = tf.concat([inputs, state], axis=2)
+
         input_size = inputs_and_state.get_shape()[2].value
         dtype = inputs.dtype
 
         x = inputs_and_state
         x0 = tf.transpose(x, perm=[1, 2, 0])  # (num_nodes, total_arg_size, batch_size)
         x0 = tf.reshape(x0, shape=[self._num_nodes, input_size * batch_size])
-        x = tf.expand_dims(x0, axis=0)
 
+        x = tf.expand_dims(x0, axis=0)
         scope = tf.get_variable_scope()
         with tf.variable_scope(scope):
             if self._max_diffusion_step == 0:
@@ -169,7 +191,7 @@ class DCGRUCell(RNNCell):
             else:
                 for support in self._supports:
                     x1 = tf.sparse_tensor_dense_matmul(support, x0)
-                    x = self._concat(x, x1)
+                    x = self._concat(x, x1)  # So, it always contains the time information
 
                     for k in range(2, self._max_diffusion_step + 1):
                         x2 = 2 * tf.sparse_tensor_dense_matmul(support, x1) - x0
@@ -178,14 +200,15 @@ class DCGRUCell(RNNCell):
 
             num_matrices = len(self._supports) * self._max_diffusion_step + 1  # Adds for x itself.
             x = tf.reshape(x, shape=[num_matrices, self._num_nodes, input_size, batch_size])
+
             x = tf.transpose(x, perm=[3, 1, 2, 0])  # (batch_size, num_nodes, input_size, order)
             x = tf.reshape(x, shape=[batch_size * self._num_nodes, input_size * num_matrices])
 
             weights = tf.get_variable(
                 'weights', [input_size * num_matrices, output_size], dtype=dtype,
                 initializer=tf.contrib.layers.xavier_initializer())
-            x = tf.matmul(x, weights)  # (batch_size * self._num_nodes, output_size)
 
+            x = tf.matmul(x, weights)  # (batch_size * self._num_nodes, output_size)
             biases = tf.get_variable("biases", [output_size], dtype=dtype,
                                      initializer=tf.constant_initializer(bias_start, dtype=dtype))
             x = tf.nn.bias_add(x, biases)
