@@ -59,7 +59,6 @@ class DCRNNSupervisor(object):
                                                    batch_size=self._data_kwargs['batch_size'],
                                                    adj_mx=adj_mx, **self._model_kwargs)
 
-
         with tf.name_scope('Test'):
             with tf.variable_scope('DCRNN', reuse=True):
                 if model_type == "original":
@@ -95,6 +94,7 @@ class DCRNNSupervisor(object):
 
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
+
         self._train_loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
@@ -182,7 +182,7 @@ class DCRNNSupervisor(object):
                 model.inputs: x,
                 model.labels: y,
                 # model.outputs: np.concatenate((x, y), axis=1)[:,1:,:,:]; I do not need this for computing the fetches.
-                model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:]
+                model.targets: np.concatenate((x, y), axis=1)[:,1:,:,:1]
             }
 
             vals = sess.run(fetches, feed_dict=feed_dict)
@@ -290,16 +290,10 @@ class DCRNNSupervisor(object):
 
         global_step = sess.run(tf.train.get_or_create_global_step())
 
-
         test_results = self.run_epoch_generator(sess, self._test_model,
                                                 self._data['test_loader'].get_iterator(),
                                                 return_output=True,
                                                 training=False)
-
-
-        # 我们很容易解释这个问题：：test_results['outputs']是一个108*64 的数组
-        # len(test_results['outputs'][0][0]) 是23长度的数组
-        # y_preds:  a list of (batch_size, horizon, num_nodes, output_dim)
 
         test_loss, y_preds = test_results['loss'], test_results['outputs']
         

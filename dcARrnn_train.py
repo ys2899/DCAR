@@ -14,7 +14,6 @@ from model.dcrnn_supervisor import DCRNNSupervisor
 
 
 
-
 def main(args):
     with open(args.config_filename) as f:
 
