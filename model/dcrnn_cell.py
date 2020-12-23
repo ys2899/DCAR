@@ -111,10 +111,8 @@ class DCGRUCell(RNNCell):
                     time_embedding = None
 
                 value = tf.nn.sigmoid(fn(value_inputs, state, time_embedding, output_size, bias_start=1.0))
-
-
-
                 value = tf.reshape(value, (-1, self._num_nodes, output_size))
+
                 r, u = tf.split(value=value, num_or_size_splits=2, axis=-1)
                 r = tf.reshape(r, (-1, self._num_nodes * self._num_units))
                 u = tf.reshape(u, (-1, self._num_nodes * self._num_units))

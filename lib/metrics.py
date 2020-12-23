@@ -25,7 +25,7 @@ def masked_mse_tf(preds, labels, null_val=np.nan):
     return tf.reduce_mean(loss)
 
 
-def masked_mae_tf(preds, labels, alpha, null_val=np.nan):
+def masked_mae_tf(preds, labels, alpha=None, null_val=np.nan):
     """
     Accuracy with masking.
     :param preds:
@@ -39,7 +39,6 @@ def masked_mae_tf(preds, labels, alpha, null_val=np.nan):
         mask = tf.not_equal(labels, null_val)
 
     # mask gives true to all values that are not equal to 0.
-
     mask = tf.cast(mask, tf.float32)
     mask /= tf.reduce_mean(mask)
     mask = tf.where(tf.is_nan(mask), tf.zeros_like(mask), mask)
@@ -49,7 +48,6 @@ def masked_mae_tf(preds, labels, alpha, null_val=np.nan):
     loss = loss * mask
     loss = tf.where(tf.is_nan(loss), tf.zeros_like(loss), loss)
 
-    # alpha could be any number greater than 0.5 but less than 1.
     if alpha:
         alpha_tensor = tf.expand_dims(
             tf.expand_dims(
@@ -141,14 +139,14 @@ def masked_rmse_loss(scaler, null_val):
 
 
 def masked_mae_loss(scaler, null_val):
-    def loss(preds, labels, alpha):
+    def loss(preds, labels):
         """
         :type alpha: float
         """
         if scaler:
             preds = scaler.inverse_transform(preds)
             labels = scaler.inverse_transform(labels)
-        mae = masked_mae_tf(preds=preds, labels=labels, alpha=alpha, null_val=null_val)
+        mae = masked_mae_tf(preds=preds, labels=labels, null_val=null_val)
 
         return mae
 

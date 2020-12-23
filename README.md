@@ -3,7 +3,6 @@
 
 # To generate the data. 
 
-
 # METR-LA
 python -m scripts.generate_training_data --output_dir=data/METR-LA --traffic_df_filename=data/metr-la.h5
 

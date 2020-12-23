@@ -8,7 +8,6 @@ import tensorflow as tf
 
 from scipy.sparse import linalg
 
-import pdb
 
 class DataLoader(object):
     def __init__(self, xs, ys, batch_size, pad_with_last_sample=True, shuffle=False):

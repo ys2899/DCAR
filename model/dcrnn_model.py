@@ -34,7 +34,6 @@ class DCRNNARModel(object):
         input_dim = int(model_kwargs.get('input_dim', 1))
         output_dim = 1
 
-
         self._inputs = tf.placeholder(tf.float32, shape=(batch_size, seq_len, num_nodes, input_dim), name='inputs')
         self._labels = tf.placeholder(tf.float32, shape=(batch_size, horizon, num_nodes, input_dim), name='labels')
         self.train_inputs = tf.concat((self._inputs, self._labels), axis=1)
