@@ -150,11 +150,11 @@ class DCRNNSupervisor(object):
         targets = model.targets
 
         if training:
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
+            loss = self._loss_fn(preds=preds, labels=targets)
         else:
             preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
             targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=None)
+            loss = self._loss_fn(preds=preds, labels=targets)
 
         fetches = {
             'loss': loss,
