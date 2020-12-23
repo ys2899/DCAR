@@ -38,14 +38,17 @@ class DCRNNARModel(object):
         self._labels = tf.placeholder(tf.float32, shape=(batch_size, horizon, num_nodes, input_dim), name='labels')
         self.train_inputs = tf.concat((self._inputs, self._labels), axis=1)
 
+
         self._targets = tf.slice(self.train_inputs, [0, 0, 0, 0],
                                  [batch_size, horizon + seq_len - 1, num_nodes, 1], name='targets')
+
 
         cell_1st_layer = DCGRUCell(rnn_units, adj_mx, first_layer=True, max_diffusion_step=max_diffusion_step,
                                    num_nodes=num_nodes, filter_type=filter_type)
 
         cell = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
                          filter_type=filter_type)
+
 
         # We temporarily change the num_proj from output_dim to input_dim.
         cell_with_projection = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
