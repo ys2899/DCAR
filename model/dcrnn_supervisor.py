@@ -94,7 +94,7 @@ class DCRNNSupervisor(object):
 
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
-        self._train_loss = self._loss_fn(preds=preds, labels=targets, alpha=0.7)
+        self._train_loss = self._loss_fn(preds=preds, labels=targets)
 
         tvars = tf.trainable_variables()
         grads = tf.gradients(self._train_loss, tvars)
