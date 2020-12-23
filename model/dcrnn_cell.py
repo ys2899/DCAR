@@ -85,8 +85,8 @@ class DCGRUCell(RNNCell):
         """
         if self._first_layer:
             value_inputs = tf.slice(inputs, [0, 0, 0], [inputs.shape[0], inputs.shape[1], 1])
-            day_inputs = tf.slice(inputs, [0, 0, 1], [inputs.shape[0], inputs.shape[1], 1])
-            time_inputs = tf.slice(inputs, [0, 0, 2], [inputs.shape[0], inputs.shape[1], 1])
+            time_inputs = tf.slice(inputs, [0, 0, 1], [inputs.shape[0], inputs.shape[1], 1])
+            day_inputs = tf.slice(inputs, [0, 0, 2], [inputs.shape[0], inputs.shape[1], 1])
         else:
             value_inputs = inputs
 
