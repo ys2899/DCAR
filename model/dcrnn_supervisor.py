@@ -153,7 +153,7 @@ class DCRNNSupervisor(object):
         else:
             preds = tf.slice(preds, [0, 11, 0, 0], [-1, -1, -1, 1])
             targets = tf.slice(targets, [0, 11, 0, 0], [-1, -1, -1, 1])
-            loss = self._loss_fn(preds=preds, labels=targets, alpha=None)
+            loss = self._loss_fn(preds=preds, labels=targets,)
 
         fetches = {
             'loss': loss,
@@ -177,8 +177,6 @@ class DCRNNSupervisor(object):
 
         for i, (x, y) in enumerate(data_generator):
 
-            import pdb
-            pdb.set_trace()
 
             feed_dict = {
                 model.inputs: x,
