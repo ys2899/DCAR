@@ -22,7 +22,7 @@ class DCRNNARModel(object):
         self._train_op = None
 
         max_diffusion_step = int(model_kwargs.get('max_diffusion_step', 2))
-        cl_decay_steps = int(model_kwargs.get('cl_decay_steps', 1000))
+        cl_decay_steps = int(model_kwargs.get('cl_decay_steps', 2000))
         filter_type = model_kwargs.get('filter_type', 'laplacian')
         horizon = int(model_kwargs.get('horizon', 1))
         max_grad_norm = float(model_kwargs.get('max_grad_norm', 5.0))
@@ -55,6 +55,7 @@ class DCRNNARModel(object):
                                          num_proj=output_dim, filter_type=filter_type)
 
         decoding_cells = [cell_1st_layer] + [cell] * (num_rnn_layers - 2) + [cell_with_projection]
+
         decoding_cells = tf.contrib.rnn.MultiRNNCell(decoding_cells, state_is_tuple=True)
         global_step = tf.train.get_or_create_global_step()
 
@@ -88,7 +89,7 @@ class DCRNNARModel(object):
                         result = tf.concat([prev, day_input, time_input], axis=-1)
                 return result
 
-            initial_state = (tf.zeros(shape=(64, 13248)), tf.zeros(shape=(64, 13248)))
+            initial_state = [tf.zeros(shape=(64, 13248)) for _ in range(num_rnn_layers)]
             state = initial_state
             outputs = []
             prev = None

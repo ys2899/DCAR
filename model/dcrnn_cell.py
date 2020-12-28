@@ -103,7 +103,7 @@ class DCGRUCell(RNNCell):
                 # r, u means the r value and u value
                 if self._first_layer:
                     with tf.variable_scope('time_embedding'):
-                        day_embedding = tf.keras.layers.Embedding(input_dim=1, output_dim=2)(day_inputs)
+                        day_embedding = tf.keras.layers.Embedding(input_dim=7, output_dim=2)(day_inputs)
                         day_embedding = tf.reshape(day_embedding, [day_embedding.shape[0], day_embedding.shape[1],
                                                                    day_embedding.shape[-1]])
                         time_embedding = tf.concat((day_embedding, time_inputs), axis=-1)
