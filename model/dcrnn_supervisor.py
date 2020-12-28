@@ -177,9 +177,6 @@ class DCRNNSupervisor(object):
 
         for i, (x, y) in enumerate(data_generator):
 
-            import pdb
-            pdb.set_trace()
-
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,
@@ -298,11 +295,6 @@ class DCRNNSupervisor(object):
                                                 training=False)
 
         test_loss, y_preds = test_results['loss'], test_results['outputs']
-        
-
-
-
-
         utils.add_simple_summary(self._writer, ['loss/test_loss'], [test_loss], global_step=global_step)
         y_preds = np.concatenate(y_preds, axis=0)[:,-12:,:,:]
 
