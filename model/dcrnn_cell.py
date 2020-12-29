@@ -83,12 +83,12 @@ class DCGRUCell(RNNCell):
         - New state: Either a single `2-D` tensor, or a tuple of tensors matching
             the arity and shapes of `state`
         """
-        if self._first_layer:
-            value_inputs = tf.slice(inputs, [0, 0, 0], [inputs.shape[0], inputs.shape[1], 1])
-            time_inputs = tf.slice(inputs, [0, 0, 1], [inputs.shape[0], inputs.shape[1], 1])
-            day_inputs = tf.slice(inputs, [0, 0, 2], [inputs.shape[0], inputs.shape[1], 1])
-        else:
-            value_inputs = inputs
+        # if self._first_layer:
+        #     value_inputs = tf.slice(inputs, [0, 0, 0], [inputs.shape[0], inputs.shape[1], 1])
+        #     time_inputs = tf.slice(inputs, [0, 0, 1], [inputs.shape[0], inputs.shape[1], 1])
+        #     day_inputs = tf.slice(inputs, [0, 0, 2], [inputs.shape[0], inputs.shape[1], 1])
+        # else:
+        #     value_inputs = inputs
 
         with tf.variable_scope(scope or "dcgru_cell"):
             with tf.variable_scope("gates"):  # Reset gate and update gate.
@@ -101,16 +101,17 @@ class DCGRUCell(RNNCell):
                     fn = self._fc
 
                 # r, u means the r value and u value
-                if self._first_layer:
-                    with tf.variable_scope('time_embedding'):
-                        day_embedding = tf.keras.layers.Embedding(input_dim=7, output_dim=2)(day_inputs)
-                        day_embedding = tf.reshape(day_embedding, [day_embedding.shape[0], day_embedding.shape[1],
-                                                                   day_embedding.shape[-1]])
-                        time_embedding = tf.concat((day_embedding, time_inputs), axis=-1)
-                else:
-                    time_embedding = None
+                # if self._first_layer:
+                #     with tf.variable_scope('time_embedding'):
+                #         day_embedding = tf.keras.layers.Embedding(input_dim=7, output_dim=2)(day_inputs)
+                #         day_embedding = tf.reshape(day_embedding, [day_embedding.shape[0], day_embedding.shape[1],
+                #                                                    day_embedding.shape[-1]])
+                #         time_embedding = tf.concat((day_embedding, time_inputs), axis=-1)
+                # else:
+                #     time_embedding = None
+                # value = tf.nn.sigmoid(fn(value_inputs, state, time_embedding=None, output_size=output_size, bias_start=1.0))
 
-                value = tf.nn.sigmoid(fn(value_inputs, state, time_embedding, output_size, bias_start=1.0))
+                value = tf.nn.sigmoid(fn(inputs, state, time_embedding=None, output_size=output_size, bias_start=1.0))
                 value = tf.reshape(value, (-1, self._num_nodes, output_size))
 
                 r, u = tf.split(value=value, num_or_size_splits=2, axis=-1)
@@ -118,7 +119,9 @@ class DCGRUCell(RNNCell):
                 u = tf.reshape(u, (-1, self._num_nodes * self._num_units))
 
             with tf.variable_scope("candidate"):
-                c = self._gconv(value_inputs, r * state, time_embedding, self._num_units)
+                # c = self._gconv(value_inputs, r * state, time_embedding, self._num_units)
+                c = self._gconv(inputs, r * state, None, self._num_units)
+
                 if self._activation is not None:
                     c = self._activation(c)
 
@@ -151,6 +154,7 @@ class DCGRUCell(RNNCell):
                                  initializer=tf.constant_initializer(bias_start, dtype=dtype))
         value = tf.nn.bias_add(value, biases)
         return value
+
 
     def _gconv(self, inputs, state, time_embedding, output_size, bias_start=0.0):
         """Graph convolution between input and the graph matrix.

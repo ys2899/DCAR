@@ -38,39 +38,30 @@ class DCRNNARModel(object):
         self._labels = tf.placeholder(tf.float32, shape=(batch_size, horizon, num_nodes, input_dim), name='labels')
         self.train_inputs = tf.concat((self._inputs, self._labels), axis=1)
 
-
         self._targets = tf.slice(self.train_inputs, [0, 0, 0, 0],
                                  [batch_size, horizon + seq_len - 1, num_nodes, 1], name='targets')
-
 
         cell_1st_layer = DCGRUCell(rnn_units, adj_mx, first_layer=True, max_diffusion_step=max_diffusion_step,
                                    num_nodes=num_nodes, filter_type=filter_type)
 
         cell = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
                          filter_type=filter_type)
-
-
         # We temporarily change the num_proj from output_dim to input_dim.
         cell_with_projection = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
                                          num_proj=output_dim, filter_type=filter_type)
-
         decoding_cells = [cell_1st_layer] + [cell] * (num_rnn_layers - 2) + [cell_with_projection]
-
         decoding_cells = tf.contrib.rnn.MultiRNNCell(decoding_cells, state_is_tuple=True)
         global_step = tf.train.get_or_create_global_step()
 
         with tf.variable_scope('DCRNN_SEQ'):
-
             train_inputs = tf.unstack(self.train_inputs, axis=1)
-
             # We need to tear the train_inputs up.
             def _loop_function(prev, i):
                 # To do: the probability of using the previous is increasing when going towards the
                 # end of the sequence.
                 train_input = train_inputs[i]
                 if len(train_input.shape)==3:
-                    day_input = tf.slice(train_input, [0, 0, 1], [train_input.shape[0], train_input.shape[1], 1])
-                    time_input = tf.slice(train_input, [0, 0, 2], [train_input.shape[0], train_input.shape[1], 1])
+                    time_input = tf.slice(train_input, [0, 0, 1], [train_input.shape[0], train_input.shape[1], 1])
 
                 if is_training:
                     if use_curriculum_learning:
@@ -79,14 +70,18 @@ class DCRNNARModel(object):
                         if i < seq_len:
                             result = train_input
                         else:
-                            result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i], lambda: tf.concat([prev, day_input, time_input], axis=-1))
+                            # result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i], lambda: tf.concat([prev,
+                            # day_input, time_input], axis=-1))
+                            result = tf.cond(tf.less(c, threshold), lambda: train_inputs[i],
+                                             lambda: tf.concat([prev, time_input], axis=-1))
                     else:
                         result = train_inputs[i]
                 else:
                     if i < seq_len:
                         result = train_inputs[i]
                     else:
-                        result = tf.concat([prev, day_input, time_input], axis=-1)
+                        # result = tf.concat([prev, day_input, time_input], axis=-1)
+                        result = tf.concat([prev, time_input], axis=-1)
                 return result
 
             initial_state = [tf.zeros(shape=(64, 13248)) for _ in range(num_rnn_layers)]

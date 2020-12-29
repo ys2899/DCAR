@@ -12,7 +12,7 @@ fi
 now=$(date +%Y%m%d%H%M%S)
 
 
-logfile=./training_history/mylogfile_$now
+logfile=../training_history/mylogfile_$now
 
 
 mkdir $logfile
