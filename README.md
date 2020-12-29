@@ -4,6 +4,14 @@
 # To generate the data. 
 
 # METR-LA
+
+First, copy the source of the h5 file to the data folder: example: cp -r ../../DCAR_old/data/metr-la.h5 data/
+
+
+Second, make the directory to store the pkl file: example: mkdir data/METR-LA
+
+
+
 python -m scripts.generate_training_data --output_dir=data/METR-LA --traffic_df_filename=data/metr-la.h5
 
 
